@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Clone UI</title>
+  <style>
+    /* ==========================================
+       CSS STYLES
+       ========================================== */
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f8f9fa;
+    }
+
+    /* Sidebar Layout */
+    .sidebar {
+      width: 240px;
+      background-color: #3f0e40;
+      color: #bcabab;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .workspace-header {
+      height: 50px;
+      border-bottom: 1px solid #522653;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-weight: bold;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .channels-list {
+      padding: 16px 0;
+      flex-grow: 1;
+    }
+
+    .channels-title {
+      padding: 0 16px 8px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .channel-item {
+      padding: 6px 16px;
+      cursor: pointer;
+      color: #bcabab;
+      font-size: 0.95rem;
+      transition: background-color 0.1s ease;
+    }
+
+    .channel-item:hover, .channel-item.active {
+      background-color: #1164A3;
+      color: white;
+    }
+
+    /* Chat Mainframe Panel */
+    .chat-area {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+    }
+
+    .chat-header {
+      height: 50px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #1d1c1d;
+    }
+
+    /* Feed List Window */
+    .messages-container {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message-header {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .message-user {
+      font-weight: bold;
+      color: #1d1c1d;
+      font-size: 0.95rem;
+    }
+
+    .message-time {
+      font-size: 0.75rem;
+      color: #616061;
+    }
+
+    .message-text {
+      color: #1d1c1d;
+      margin-top: 2px;
+      font-size: 0.95rem;
+      word-break: break-word;
+    }
+
+    /* Form Composer Controls */
+    .input-area {
+      padding: 20px;
+      border-top: 1px solid #ddd;
+    }
+
+    .input-form {
+      display: flex;
+      border: 1px solid #868686;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .user-input {
+      width: 130px;
+      border: none;
+      border-right: 1px solid #ddd;
+      padding: 12px;
+      outline: none;
+      font-size: 0.9rem;
+      background: #fafafa;
+    }
+
+    .text-input {
+      flex-grow: 1;
+      border: none;
+      padding: 12px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+    .send-btn {
+      background-color: #007a5a;
+      color: white;
+      border: none;
+      padding: 0 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.1s ease;
+    }
+
+    .send-btn:hover {
+      background-color: #148567;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       HTML LAYOUT
+       ========================================== -->
+  <!-- Sidebar Component -->
+  <aside class="sidebar">
+    <div class="workspace-header">My Workspace</div>
+    <nav class="channels-list">
+      <div class="channels-title">Channels</div>
+      <div class="channel-item active" data-channel="general"># general</div>
+      <div class="channel-item" data-channel="random"># random</div>
+      <div class="channel-item" data-channel="development"># development</div>
+    </nav>
+  </aside>
+
+  <!-- Chat Frame Component -->
+  <main class="chat-area">
+    <header class="chat-header" id="chatTitle"># general</header>
+    
+    <!-- Feed Window -->
+    <section class="messages-container" id="messagesContainer"></section>
+    
+    <!-- Composer Tray -->
+    <footer class="input-area">
+      <form class="input-form" id="chatForm">
+        <input type="text" id="userInput" class="user-input" placeholder="Your Name" value="Guest" required />
+        <input type="text" id="textInput" class="text-input" placeholder="Message #general..." autocomplete="off" required />
+        <button type="submit" class="send-btn">Send</button>
+      </form>
+    </footer>
+  </main>
+
+  <!-- ==========================================
+       JAVASCRIPT LOGIC
+       ========================================== -->
+  <script>
+    const messagesContainer = document.getElementById('messagesContainer');
+    const chatTitle = document.getElementById('chatTitle');
+    const textInput = document.getElementById('textInput');
+    const userInput = document.getElementById('userInput');
+    const chatForm = document.getElementById('chatForm');
+    const channelItems = document.querySelectorAll('.channel-item');
+
+    const defaultMessages = {
+      general: [
+        { user: 'Bot', time: '9:00 AM', text: 'Welcome to the general channel!' },
+        { user: 'Alice', time: '9:05 AM', text: 'Hey everyone! Ready to build something cool?' }
+      ],
+      random: [
+        { user: 'Bot', time: '9:02 AM', text: 'This is the random hangout channel.' }
+      ],
+      development: [
+        { user: 'Bot', time: '9:10 AM', text: 'Share updates and project progress here.' }
+      ]
+    };
+
+    const state = {
+      currentChannel: 'general',
+      messages: JSON.parse(localStorage.getItem('slackMessages')) || defaultMessages
+    };
+
+    function saveMessages() {
+      localStorage.setItem('slackMessages', JSON.stringify(state.messages));
+    }
+
+    function syncMessagesFromStorage() {
+      const stored = JSON.parse(localStorage.getItem('slackMessages') || 'null');
+      if (stored) {
+        state.messages = stored;
+      }
+      fetchMessages();
+    }
+
+    function getCurrentMessages() {
+      return state.messages[state.currentChannel] || [];
+    }
+
+    function formatTime() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>"']/g, function (tag) {
+        const map = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        };
+        return map[tag] || tag;
+      });
+    }
+
+    function renderMessages() {
+      const messages = getCurrentMessages();
+
+      messagesContainer.innerHTML = messages.map(message => `
+        <div class="message">
+          <div class="message-header">
+            <span class="message-user">${escapeHTML(message.user)}</span>
+            <span class="message-time">${escapeHTML(message.time)}</span>
+          </div>
+          <div class="message-text">${escapeHTML(message.text)}</div>
+        </div>
+      `).join('');
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function fetchMessages() {
+      chatTitle.innerText = `# ${state.currentChannel}`;
+      textInput.placeholder = `Message #${state.currentChannel}...`;
+      renderMessages();
+    }
+
+    function handleChannelSwitch(event) {
+      const target = event.currentTarget;
+      const channelName = target.getAttribute('data-channel');
+
+      state.currentChannel = channelName;
+      channelItems.forEach(item => item.classList.remove('active'));
+      target.classList.add('active');
+      fetchMessages();
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const text = textInput.value.trim();
+      const user = userInput.value.trim() || 'Guest';
+
+      if (!text) return;
+
+      if (!state.messages[state.currentChannel]) {
+        state.messages[state.currentChannel] = [];
+      }
+
+      state.messages[state.currentChannel].push({
+        user,
+        text,
+        time: formatTime()
+      });
+
+      saveMessages();
+      textInput.value = '';
+      fetchMessages();
+    }
+
+    chatForm.addEventListener('submit', handleFormSubmit);
+    channelItems.forEach(item => item.addEventListener('click', handleChannelSwitch));
+    window.addEventListener('storage', function (event) {
+      if (event.key === 'slackMessages') {
+        syncMessagesFromStorage();
+      }
+    });
+
+    fetchMessages();
+  </script>
+</body>
+</html>
